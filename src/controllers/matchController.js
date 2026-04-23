@@ -1,3 +1,5 @@
+const redis = require("../config/redis");
+
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -70,6 +72,11 @@ const createMatch = async (req, res) => {
     const match = await prisma.match.create({
       data: { ...req.body, date: new Date(req.body.date) },
     });
+
+    // delete stale data from cache
+    const keys = await redis.keys("cache:/api/matches*");
+    if (keys.length > 0) await redis.del(keys);
+
     res.status(201).json(match);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,6 +90,10 @@ const updateMatch = async (req, res) => {
       where: { id: parseInt(id) },
       data: req.body,
     });
+
+    const keys = await redis.keys("cache:/api/matches*");
+    if (keys.length > 0) await redis.del(keys);
+
     res.json(match);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -93,6 +104,10 @@ const deleteMatch = async (req, res) => {
   try {
     const id = req.params.id;
     await prisma.match.delete({ where: { id: parseInt(id) } });
+
+    const keys = await redis.keys("cache:/api/matches*");
+    if (keys.length > 0) await redis.del(keys);
+
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });
