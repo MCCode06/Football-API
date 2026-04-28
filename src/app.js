@@ -1,9 +1,11 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const passport = require('./config/passport');
 const app = express();
 
 app.use(express.json());
+app.use(passport.initialize());
 
 app.get('/health', (req, res) => {
     res.send({ status: 'ok' });

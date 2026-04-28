@@ -1,6 +1,8 @@
 const express = require('express');
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { register, login } = require('../controllers/authController');
+const passport = require('../config/passport');
 
 /**
  * @swagger
@@ -69,5 +71,17 @@ router.post('/register', register);
  *         description: Server error
  */
 router.post('/login', login);
+
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/api/auth/login', session: false }),
+  (req, res) => {
+    const token = jwt.sign({ userId: req.user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token });
+  }
+);
 
 module.exports = router;
